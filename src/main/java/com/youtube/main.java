@@ -3,6 +3,7 @@ package com.youtube;
 import com.github.kiulian.downloader.OnYoutubeDownloadListener;
 import com.github.kiulian.downloader.YoutubeDownloader;
 import com.github.kiulian.downloader.YoutubeException;
+import com.github.kiulian.downloader.model.Itag;
 import com.github.kiulian.downloader.model.VideoDetails;
 import com.github.kiulian.downloader.model.YoutubeVideo;
 import com.github.kiulian.downloader.model.formats.AudioFormat;
@@ -16,12 +17,14 @@ import com.github.kiulian.downloader.parser.Parser;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 public class main {
-    public static void main(String[] args) throws IOException, YoutubeException {
 
+    public static void main(String[] args) throws IOException, YoutubeException {
         // init downloader
         YoutubeDownloader downloader = new YoutubeDownloader();
 
@@ -53,19 +56,34 @@ public class main {
 //            System.out.println(it.audioQuality() + " : " + it.url());
 //        });
 
-
+        System.out.println("###################");
+        //所有
         List<Format> allFormats = video.formats();
         allFormats.forEach(it -> {
-            System.out.println(it.extension().value() + ":" + it.itag() + " : " + it.url());
+            System.out.println(it.extension().value() + ":" + Itag.valueOf("i" + it.itag()).videoQuality() + " : " + it.url());
         });
 
         System.out.println("###################");
-
-        //filtering only video formats
-        List<AudioVideoFormat> videoFormats = video.videoWithAudioFormats();
-        videoFormats.forEach(it -> {
-            System.out.println(it.extension().value() + ":" + it.itag() + " : " + it.url());
+        //影片+聲音
+        List<AudioVideoFormat> videoAudioFormats = video.videoWithAudioFormats();
+        videoAudioFormats.forEach(it -> {
+            System.out.println(it.extension().value() + ":" + it.videoQuality() + " : " + it.url());
         });
+
+        System.out.println("###################");
+        //影片
+        List<VideoFormat> videoFormats = video.videoFormats();
+        videoFormats.forEach(it -> {
+            System.out.println(it.extension().value() + ":" + it.videoQuality() + " : " + it.url());
+        });
+
+        System.out.println("###################");
+        //聲音
+        List<AudioFormat> AudioFormats = video.audioFormats();
+        AudioFormats.forEach(it -> {
+            System.out.println(it.extension().value() + ":" + it.audioQuality() + " : " + it.url());
+        });
+
 
         // itags can be found here - https://gist.github.com/sidneys/7095afe4da4ae58694d128b1034e01e2
 //        Format formatByItag = video.findFormatByItag(151);
