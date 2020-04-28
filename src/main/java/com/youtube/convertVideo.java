@@ -3,43 +3,54 @@ package com.youtube;
 import com.coremedia.iso.boxes.Container;
 import com.googlecode.mp4parser.FileDataSourceImpl;
 import com.googlecode.mp4parser.authoring.Movie;
-import com.googlecode.mp4parser.authoring.Mp4TrackImpl;
 import com.googlecode.mp4parser.authoring.Track;
 import com.googlecode.mp4parser.authoring.builder.DefaultMp4Builder;
 import com.googlecode.mp4parser.authoring.container.mp4.MovieCreator;
-import com.googlecode.mp4parser.authoring.tracks.AACTrackImpl;
-import com.googlecode.mp4parser.authoring.tracks.h264.H264TrackImpl;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
+import java.nio.BufferOverflowException;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.channels.WritableByteChannel;
 import java.util.ArrayList;
 import java.util.List;
 
 public class convertVideo {
-    public static void main(String[] args) {
-        val mergeExample = arrayListOf<String>(video.path, audio2.path)
+    public convertVideo(String videoFile, String audioFile, String outputFile) {
+        Movie video;
+        Movie audio;
 
+        try {
+            video = new MovieCreator().build(videoFile);
+            audio = new MovieCreator().build(audioFile);
 
-        //This will merge audio and video files together in a single video file.
-        mergeExample.merge()
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribeBy(
-                        onNext = {
-        if (TextUtils.isEmpty(it)) {
-            showToast(getString(R.string.message_error))
-        } else {
-            Log.i(TAG, "Output Path: $it")
-            showToast(getString(R.string.message_appended) + " " + it)
+        } catch (RuntimeException | IOException e) {
+            e.printStackTrace();
+            return;
         }
-                        },
-        onError = {
-                it.printStackTrace()
-        },
-                onComplete = {}
-                )
 
+        Track audioTrack = audio.getTracks().get(0);
+        video.addTrack(audioTrack);
+
+        Container out = new DefaultMp4Builder().build(video);
+
+        FileOutputStream fos;
+        try {
+            fos = new FileOutputStream(outputFile);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        BufferedWritableFileByteChannel byteBufferByteChannel = new BufferedWritableFileByteChannel(fos);
+        try {
+            out.writeContainer(byteBufferByteChannel);
+            byteBufferByteChannel.close();
+            fos.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+//            return false;
+        }
+//        return true;
     }
 }

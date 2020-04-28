@@ -15,11 +15,19 @@ import com.github.kiulian.downloader.model.quality.VideoQuality;
 import com.github.kiulian.downloader.parser.DefaultParser;
 import com.github.kiulian.downloader.parser.Parser;
 
+import java.awt.*;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 
 public class main {
@@ -39,7 +47,7 @@ public class main {
         downloader.setParserRetryOnFailure(1);
 
         // parsing data
-        String videoId = "zCLOJ9j1k2Y"; // for url https://www.youtube.com/watch?v=abc12345
+        String videoId = "jps1vRhJkh0"; // for url https://www.youtube.com/watch?v=abc12345
         YoutubeVideo video = downloader.getVideo(videoId);
 
 
@@ -80,37 +88,39 @@ public class main {
             System.out.println(it.extension().value() + ":" + it.audioQuality() + ":" + it.itag() + " : " + it.url());
         });
 
+        //輸出位置
+        File outputDir = new File("file_out");
+        String outputVideo = outputDir + "/outVideo.mp4";
 
-//        Format formatByItag = video.findFormatByItag(151);
-//        if (formatByItag != null) {
-//            System.out.println(formatByItag.url());
-//        }
+        int index = input("輸入itag:");
+        Format file = video.findFormatByItag(index);// 選擇的影片
+        System.out.println("找到:" + file.itag().videoQuality() + file.extension().value());
 
-//        File outputDir = new File("my_videos");
-//
-//        // sync downloading
-//        video.download(videoAudioFormats.get(1), outputDir);
+        File videoFile = video.download(file, outputDir);// 下載影片
+        File audioFile = video.download(AudioFormats.get(0), outputDir);//下載音檔
 
-        // async downloading with callback
-//        video.downloadAsync(videoAudioFormats.get(0), outputDir, new OnYoutubeDownloadListener() {
-//            @Override
-//            public void onDownloading(int progress) {
-//                System.out.printf("Downloaded %d%%\n", progress);
-//            }
-//
-//            @Override
-//            public void onFinished(File file) {
-//                System.out.println("Finished file: " + file);
-//            }
-//
-//            @Override
-//            public void onError(Throwable throwable) {
-//                System.out.println("Error: " + throwable.getLocalizedMessage());
-//            }
-//        });
+        audioFile = extensionToMp3(outputDir, audioFile);//改音檔副檔名
 
-        // async downloading with future
-//        Future<File> future = video.downloadAsync(format, outputDir);
-//        File file = future.get(5, TimeUnit.SECONDS);
+        new convertVideo(videoFile.getPath(), audioFile.getPath(), outputVideo);
+    }
+
+    public static int input(String message) {
+        System.out.println(message);
+
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        String userInput = null;
+        try {
+            userInput = reader.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return Integer.parseInt(userInput);
+    }
+
+    public static File extensionToMp3(File outPath, File file) {
+        String name = file.getName().replace("(1).mp4", "");
+        File toFile = new File(outPath + "/" + name + ".m4a");
+        file.renameTo(toFile);
+        return toFile;
     }
 }
