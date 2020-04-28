@@ -39,65 +39,60 @@ public class main {
         downloader.setParserRetryOnFailure(1);
 
         // parsing data
-        String videoId = "8z3KCSRC6so"; // for url https://www.youtube.com/watch?v=abc12345
+        String videoId = "zCLOJ9j1k2Y"; // for url https://www.youtube.com/watch?v=abc12345
         YoutubeVideo video = downloader.getVideo(videoId);
 
 
         // 影片標題
         VideoDetails details = video.details();
-        System.out.println(details.title());
+        System.out.println("標題" + details.title());
         // 觀看數
-        System.out.println(details.viewCount());
+        System.out.println("觀看數" + details.viewCount());
         details.thumbnails().forEach(image -> System.out.println("Thumbnail: " + image));
 
-        // get videos with audio
-//        List<AudioFormat> AudioFormats = video.findAudioWithQuality(AudioQuality.low);
-//        AudioFormats.forEach(it -> {
-//            System.out.println(it.audioQuality() + " : " + it.url());
-//        });
+        //itags https://gist.github.com/sidneys/7095afe4da4ae58694d128b1034e01e2
 
-        System.out.println("###################");
+        System.out.println("#########所有#########");
         //所有
         List<Format> allFormats = video.formats();
         allFormats.forEach(it -> {
             System.out.println(it.extension().value() + ":" + Itag.valueOf("i" + it.itag()).videoQuality() + " : " + it.url());
         });
 
-        System.out.println("###################");
+        System.out.println("#########影片+聲音#########");
         //影片+聲音
         List<AudioVideoFormat> videoAudioFormats = video.videoWithAudioFormats();
         videoAudioFormats.forEach(it -> {
-            System.out.println(it.extension().value() + ":" + it.videoQuality() + " : " + it.url());
+            System.out.println(it.extension().value() + ":" + it.videoQuality() + ":" + it.itag() + " : " + it.url());
         });
 
-        System.out.println("###################");
+        System.out.println("#########影片#########");
         //影片
         List<VideoFormat> videoFormats = video.videoFormats();
         videoFormats.forEach(it -> {
-            System.out.println(it.extension().value() + ":" + it.videoQuality() + " : " + it.url());
+            System.out.println(it.extension().value() + ":" + it.videoQuality() + ":" + it.itag() + " : " + it.url());
         });
 
-        System.out.println("###################");
+        System.out.println("#########聲音#########");
         //聲音
         List<AudioFormat> AudioFormats = video.audioFormats();
         AudioFormats.forEach(it -> {
-            System.out.println(it.extension().value() + ":" + it.audioQuality() + " : " + it.url());
+            System.out.println(it.extension().value() + ":" + it.audioQuality() + ":" + it.itag() + " : " + it.url());
         });
 
 
-        // itags can be found here - https://gist.github.com/sidneys/7095afe4da4ae58694d128b1034e01e2
 //        Format formatByItag = video.findFormatByItag(151);
 //        if (formatByItag != null) {
 //            System.out.println(formatByItag.url());
 //        }
 
 //        File outputDir = new File("my_videos");
-
-        // sync downloading
-//        video.download(videoWithAudioFormats.get(0), outputDir);
+//
+//        // sync downloading
+//        video.download(videoAudioFormats.get(1), outputDir);
 
         // async downloading with callback
-//        video.downloadAsync(AudioFormats.get(0), outputDir, new OnYoutubeDownloadListener() {
+//        video.downloadAsync(videoAudioFormats.get(0), outputDir, new OnYoutubeDownloadListener() {
 //            @Override
 //            public void onDownloading(int progress) {
 //                System.out.printf("Downloaded %d%%\n", progress);
