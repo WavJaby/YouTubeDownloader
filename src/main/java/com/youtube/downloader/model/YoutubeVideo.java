@@ -15,9 +15,8 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
+
+import static com.youtube.downloader.model.Utils.getOutputFile;
 
 public class YoutubeVideo {
 
@@ -142,14 +141,15 @@ public class YoutubeVideo {
         return outputFile;
     }
 
-    public File downloadAsync(Format format, File outDir, OnYoutubeDownloadListener listener) throws IOException, YoutubeException {
+
+    public Runnable downloadAsync(Format format, File outDir, OnYoutubeDownloadListener listener) throws IOException, YoutubeException {
         if (videoDetails.isLive() || (videoDetails.isLiveContent() && videoDetails.lengthSeconds() == 0))
             throw new YoutubeException.LiveVideoException("Can not download live stream");
 
         File outputFile = getOutputFile(videoDetails, format, outDir);
 
         URL url = new URL(format.url());
-        Thread thread = new Thread(() -> {
+        Runnable runnable = () -> {
             try {
                 URLConnection urlConnection = url.openConnection();
                 int contentLength = urlConnection.getContentLength();
@@ -169,7 +169,6 @@ public class YoutubeVideo {
                                 listener.onDownloading(progress);
                             }
                         }
-
                         listener.onFinished(outputFile);
                     } catch (IOException e) {
                         listener.onError(e);
@@ -180,40 +179,9 @@ public class YoutubeVideo {
             } catch (IOException e) {
                 listener.onError(e);
             }
-        });
-//        thread.setDaemon(true);
-        thread.start();
-        return outputFile;
+        };
+        return runnable;
     }
-
-    private static final char[] ILLEGAL_FILENAME_CHARACTERS = {'/', '\n', '\r', '\t', '\0', '\f', '`', '?', '*', '\\', '<', '>', '|', '\"', ':'};
-
-    static String removeIllegalChars(String filename) {
-        for (char c : ILLEGAL_FILENAME_CHARACTERS) {
-            filename = filename.replace(c, '_');
-        }
-        return filename;
-    }
-
-    static File getOutputFile(VideoDetails videoDetails, Format format, File outDir) throws IOException {
-        if (!outDir.exists()) {
-            boolean mkdirs = outDir.mkdirs();
-            if (!mkdirs)
-                throw new IOException("Could not create output directory: " + outDir);
-        }
-
-        String fileName = videoDetails.title() + "." + format.extension().value();
-        File outputFile = new File(outDir, removeIllegalChars(fileName));
-
-        int i = 1;
-        while (outputFile.exists()) {
-            fileName = videoDetails.title() + "(" + i++ + ")" + "." + format.extension().value();
-            outputFile = new File(outDir, removeIllegalChars(fileName));
-        }
-        return outputFile;
-    }
-
-
 
 //    public Future<File> downloadAsync(Format format, File outDir) throws YoutubeException.LiveVideoException, IOException {
 //        if (videoDetails.isLive())
