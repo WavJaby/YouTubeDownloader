@@ -1,26 +1,26 @@
 package com.youtube;
 
-import com.github.kiulian.downloader.OnYoutubeDownloadListener;
-import com.github.kiulian.downloader.YoutubeDownloader;
-import com.github.kiulian.downloader.YoutubeException;
-import com.github.kiulian.downloader.model.YoutubeVideo;
-import com.github.kiulian.downloader.model.formats.VideoFormat;
+import com.youtube.downloader.OnYoutubeDownloadListener;
+import com.youtube.downloader.YoutubeException;
+import com.youtube.downloader.model.VideoDetails;
+import com.youtube.downloader.model.formats.AudioFormat;
+import com.youtube.downloader.model.formats.VideoFormat;
+import com.youtube.downloader.YoutubeDownloader;
+import com.youtube.downloader.model.YoutubeVideo;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.logging.Logger;
 
 public class test {
-    public static void main(String[] args) throws IOException, YoutubeException, InterruptedException, ExecutionException, TimeoutException {
-// init downloader
+    public static void main(String[] args) throws IOException, YoutubeException {
+        // init downloader
         YoutubeDownloader downloader = new YoutubeDownloader();
-
         // you can easly implement or extend default parsing logic
-//        YoutubeDownloader downloader = new YoutubeDownloader(new Parser());
+        //YoutubeDownloader downloader = new YoutubeDownloader(new Parser());
         // or just extend functionality via existing API
         // cipher features
         downloader.addCipherFunctionPattern(2, "\\b([a-zA-Z0-9$]{2})\\s*=\\s*function\\(\\s*a\\s*\\)\\s*\\{\\s*a\\s*=\\s*a\\.split\\(\\s*\"\"\\s*\\)");
@@ -32,6 +32,7 @@ public class test {
         // parsing data
         String videoId = "jps1vRhJkh0"; // for url https://www.youtube.com/watch?v=abc12345
         YoutubeVideo video = downloader.getVideo(videoId);
+        VideoDetails details = video.details();
 
         System.out.println("#########影片#########");
         //影片
@@ -40,11 +41,17 @@ public class test {
             System.out.println(it.extension().value() + ":" + it.videoQuality() + ":" + it.itag() + " : " + it.url());
         });
 
+        System.out.println("#########聲音#########");
+        //聲音
+        List<AudioFormat> AudioFormats = video.audioFormats();
+        AudioFormats.forEach(it -> {
+            System.out.println(it.extension().value() + ":" + it.audioQuality() + ":" + it.itag() + " : " + it.url());
+        });
+
 
         File outputDir = new File("file_out");
 
-        //async downloading with callback
-        video.downloadAsync(videoFormats.get(3), outputDir, new OnYoutubeDownloadListener() {
+        video.downloadAsync(AudioFormats.get(0), outputDir, new OnYoutubeDownloadListener() {
             @Override
             public void onDownloading(int progress) {
                 System.out.printf("Downloaded %d%%\n", progress);
@@ -52,15 +59,38 @@ public class test {
 
             @Override
             public void onFinished(File file) {
-                System.out.println("Finished file: " + file);
+                System.out.println("Finished file :" + file);
             }
 
             @Override
             public void onError(Throwable throwable) {
-                System.out.println("Error: " + throwable.getLocalizedMessage());
+                System.out.println("Error: " + throwable);
             }
         });
 
-//        File file = future.get();
+
+//        Downloader videoDownloader = new Downloader();
+//        videoDownloader.setUrl(videoFormats.get(3).url());
+//        videoDownloader.setDestinationFolder(outputDir);
+//        videoDownloader.setFilename(details.title() + ".mp4");
+//        videoDownloader.setCallback(new Downloader.DownloaderCallback() {
+//
+//            @Override
+//            public void onComplete() {
+//                System.out.println("Finished");
+//            }
+//
+//            @Override
+//            public void onFailed(String message) {
+//                System.out.println("Error: " + message);
+//            }
+//
+//            @Override
+//            public void onProgress(int progress) {
+//                System.out.printf("Downloaded %d%%\n", progress);
+//            }
+//        });
+//
+//        videoDownloader.download();
     }
 }

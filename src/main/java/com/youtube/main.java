@@ -1,43 +1,34 @@
 package com.youtube;
 
-import com.github.kiulian.downloader.OnYoutubeDownloadListener;
-import com.github.kiulian.downloader.YoutubeDownloader;
-import com.github.kiulian.downloader.YoutubeException;
-import com.github.kiulian.downloader.model.Itag;
-import com.github.kiulian.downloader.model.VideoDetails;
-import com.github.kiulian.downloader.model.YoutubeVideo;
-import com.github.kiulian.downloader.model.formats.AudioFormat;
-import com.github.kiulian.downloader.model.formats.AudioVideoFormat;
-import com.github.kiulian.downloader.model.formats.Format;
-import com.github.kiulian.downloader.model.formats.VideoFormat;
-import com.github.kiulian.downloader.model.quality.AudioQuality;
-import com.github.kiulian.downloader.model.quality.VideoQuality;
-import com.github.kiulian.downloader.parser.DefaultParser;
-import com.github.kiulian.downloader.parser.Parser;
+import com.youtube.downloader.OnYoutubeDownloadListener;
+import com.youtube.downloader.YoutubeException;
+import com.youtube.downloader.model.Itag;
+import com.youtube.downloader.model.VideoDetails;
+import com.youtube.downloader.model.formats.AudioFormat;
+import com.youtube.downloader.model.formats.AudioVideoFormat;
+import com.youtube.downloader.model.formats.Format;
+import com.youtube.downloader.model.formats.VideoFormat;
+import com.youtube.downloader.YoutubeDownloader;
+import com.youtube.downloader.model.YoutubeVideo;
 
-import java.awt.*;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Scanner;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-
 public class main {
 
-    public static void main(String[] args) throws IOException, YoutubeException {
+    public static void main(String[] args) throws IOException, YoutubeException, InterruptedException, ExecutionException, TimeoutException {
         // init downloader
         YoutubeDownloader downloader = new YoutubeDownloader();
 
         // you can easly implement or extend default parsing logic
-//        YoutubeDownloader downloader = new YoutubeDownloader(new Parser());
+        // YoutubeDownloader downloader = new YoutubeDownloader(new Parser());
         // or just extend functionality via existing API
         // cipher features
         downloader.addCipherFunctionPattern(2, "\\b([a-zA-Z0-9$]{2})\\s*=\\s*function\\(\\s*a\\s*\\)\\s*\\{\\s*a\\s*=\\s*a\\.split\\(\\s*\"\"\\s*\\)");
@@ -47,7 +38,8 @@ public class main {
         downloader.setParserRetryOnFailure(1);
 
         // parsing data
-        String videoId = "jps1vRhJkh0"; // for url https://www.youtube.com/watch?v=abc12345
+//        String videoId = "G7oh5A7gGpQ"; // for url https://www.youtube.com/watch?v=abc12345
+        String videoId = "https://www.youtube.com/watch?v=zlHLAYVblRs";
         YoutubeVideo video = downloader.getVideo(videoId);
 
 
@@ -85,7 +77,7 @@ public class main {
         //聲音
         List<AudioFormat> AudioFormats = video.audioFormats();
         AudioFormats.forEach(it -> {
-            System.out.println(it.extension().value() + ":" + it.audioQuality() + ":" + it.itag() + " : " + it.url());
+            System.out.println(it.extension().value() + ":" + it.averageBitrate()/1000 + "k:" + it.itag() + " : " + it.url());
         });
 
         //輸出位置
@@ -94,14 +86,69 @@ public class main {
 
         int index = input("輸入itag:");
         Format file = video.findFormatByItag(index);// 選擇的影片
-        System.out.println("找到:" + file.itag().videoQuality() + file.extension().value());
+        System.out.println("找到:" + file.itag().videoQuality() + "." + file.extension().value());
 
-        File videoFile = video.download(file, outputDir);// 下載影片
-        File audioFile = video.download(AudioFormats.get(0), outputDir);//下載音檔
+        File videoFile = video.downloadAsync(file, outputDir, new OnYoutubeDownloadListener() {// 下載影片
+            @Override
+            public void onDownloading(int progress) {
+                System.out.println("影片: " + progress + "%");
+            }
 
-        audioFile = extensionToMp3(outputDir, audioFile);//改音檔副檔名
+            @Override
+            public void onFinished(File file) {
+                System.out.println("完成:" + file);
+            }
 
-        new convertVideo(videoFile.getPath(), audioFile.getPath(), outputVideo);
+            @Override
+            public void onError(Throwable throwable) {
+                System.out.println("Error: " + throwable);
+            }
+        });
+
+//        File audioFile = video.downloadAsync(AudioFormats.get(1), outputDir, new OnYoutubeDownloadListener() {
+//            @Override
+//            public void onDownloading(int progress) {
+//                System.out.println("聲音: " + progress + "%");
+//            }
+//
+//            @Override
+//            public void onFinished(File file) {
+//                System.out.println("完成:" + file);
+//            }
+//
+//            @Override
+//            public void onError(Throwable throwable) {
+//                System.out.println("Error: " + throwable);
+//            }
+//        });//下載音檔
+//
+//        File videoFile = video.downloadAsync(file, outputDir, new OnYoutubeDownloadListener() {// 下載影片
+//            @Override
+//            public void onDownloading(int progress) {
+//                System.out.println("影片: " + progress + "%");
+//            }
+//
+//            @Override
+//            public void onFinished(File file) {
+//                System.out.println("完成:" + file);
+//            }
+//
+//            @Override
+//            public void onError(Throwable throwable) {
+//                System.out.println("Error: " + throwable);
+//            }
+//        });
+
+//        audioFile = extensionToM4a(outputDir, audioFile);//改音檔副檔名
+
+//        new convertVideo(videoFile.getPath(), audioFile.getPath(), outputVideo);
+    }
+
+    public static File extensionToM4a(File outPath, File file) {
+        String name = file.getName().replace(".mp4", "");
+        File toFile = new File(outPath + "/" + name + ".m4a");
+        file.renameTo(toFile);
+        return toFile;
     }
 
     public static int input(String message) {
@@ -117,10 +164,4 @@ public class main {
         return Integer.parseInt(userInput);
     }
 
-    public static File extensionToMp3(File outPath, File file) {
-        String name = file.getName().replace("(1).mp4", "");
-        File toFile = new File(outPath + "/" + name + ".m4a");
-        file.renameTo(toFile);
-        return toFile;
-    }
 }
