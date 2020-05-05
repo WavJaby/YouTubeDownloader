@@ -1,4 +1,4 @@
-package com.youtube;
+package com.youtube.downloader;
 
 import java.io.IOException;
 import java.io.OutputStream;

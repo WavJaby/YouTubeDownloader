@@ -1,22 +1,25 @@
 package com.youtube;
 
 import com.youtube.downloader.OnYoutubeDownloadListener;
+import com.youtube.downloader.YoutubeDownloader;
 import com.youtube.downloader.YoutubeException;
+import com.youtube.downloader.convertVideo;
 import com.youtube.downloader.model.Itag;
 import com.youtube.downloader.model.VideoDetails;
+import com.youtube.downloader.model.YoutubeVideo;
 import com.youtube.downloader.model.formats.AudioFormat;
 import com.youtube.downloader.model.formats.AudioVideoFormat;
 import com.youtube.downloader.model.formats.Format;
 import com.youtube.downloader.model.formats.VideoFormat;
-import com.youtube.downloader.YoutubeDownloader;
-import com.youtube.downloader.model.YoutubeVideo;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class main {
 
@@ -31,7 +34,7 @@ public class main {
         downloader.setParserRetryOnFailure(1);
 
         // 影片網址
-        String videoId = "https://www.youtube.com/watch?v=N3PI8_2eAtU";
+        String videoId = "https://www.youtube.com/watch?v=7G0PYEFdB6Y";
         // 取得影片
         YoutubeVideo video = downloader.getVideo(videoId);
 
@@ -46,7 +49,6 @@ public class main {
 
         //輸出位置
         String outputDir = "file_out";
-        String outputVideo = outputDir + "/outVideo.mp4";
 
         int itag = input("輸入itag:");
         Format videoFile = video.findFormatByItag(itag);// 選擇的影片
@@ -94,13 +96,13 @@ public class main {
 //        new convertVideo(videoFile.getPath(), audioFile.getPath(), outputVideo);
     }
 
-    public static File[] downloadVideoAudio(YoutubeVideo video, String outputDir, Format videoFile, Format audioFile) throws IOException, YoutubeException {
+    public static File[] downloadVideoAudio(YoutubeVideo ytVideo, String outputDir, Format videoFile, Format audioFile) throws IOException, YoutubeException {
         int coreCount = Runtime.getRuntime().availableProcessors();
         File[] outFile = new File[2];
         File videoOutDir = new File(outputDir + "/video");
         File audioOutDir = new File(outputDir + "/audio");
         ExecutorService executorService = Executors.newFixedThreadPool(coreCount);
-        executorService.submit(video.downloadAsync(audioFile, audioOutDir, new OnYoutubeDownloadListener() {// 下載聲音
+        executorService.submit(ytVideo.downloadAsync(audioFile, audioOutDir, new OnYoutubeDownloadListener() {// 下載聲音
             @Override
             public void onDownloading(int progress) {
                 System.out.println("聲音: " + progress + "%");
@@ -108,8 +110,8 @@ public class main {
 
             @Override
             public void onFinished(File file) {
-                System.out.println("完成:" + file);
-                outFile[0] = extensionToM4a(file);
+                System.out.println("音檔下載完成:" + file);
+                outFile[0] = file;
             }
 
             @Override
@@ -118,7 +120,7 @@ public class main {
             }
         }));
 
-        executorService.submit(video.downloadAsync(videoFile, videoOutDir, new OnYoutubeDownloadListener() {// 下載影片
+        executorService.submit(ytVideo.downloadAsync(videoFile, videoOutDir, new OnYoutubeDownloadListener() {// 下載影片
             @Override
             public void onDownloading(int progress) {
                 System.out.println("影片: " + progress + "%");
@@ -126,7 +128,7 @@ public class main {
 
             @Override
             public void onFinished(File file) {
-                System.out.println("完成:" + file);
+                System.out.println("影片下載完成: " + file);
                 outFile[1] = file;
             }
 
@@ -143,6 +145,7 @@ public class main {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        new convertVideo(outFile[1].getPath(), outFile[0].getPath(), outputDir);
         return outFile;
     }
 
