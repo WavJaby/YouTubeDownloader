@@ -1,7 +1,6 @@
 package com.youtube.downloader;
 
 import com.alibaba.fastjson.JSONObject;
-import com.youtube.downloader.YoutubeException;
 import com.youtube.downloader.cipher.CipherFunction;
 import com.youtube.downloader.model.VideoDetails;
 import com.youtube.downloader.model.formats.Format;
@@ -39,10 +38,10 @@ public class YoutubeDownloader {
         parser.getCipherFactory().addFunctionEquivalent(regex, function);
     }
 
-    public YoutubeVideo getVideo(String videoId) throws YoutubeException, IOException {
+    public YoutubeVideo getVideo(String videoUrl) throws YoutubeException, IOException {
 //        String htmlUrl = "https://www.youtube.com/watch?v=" + videoId;
 
-        JSONObject ytPlayerConfig = parser.getPlayerConfig(videoId);
+        JSONObject ytPlayerConfig = parser.getPlayerConfig(videoUrl);
 
         VideoDetails videoDetails = parser.getVideoDetails(ytPlayerConfig);
 

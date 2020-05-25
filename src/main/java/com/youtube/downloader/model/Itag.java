@@ -106,7 +106,7 @@ public enum Itag {
     i247(VideoQuality.hd720p),
     i248(VideoQuality.hd1080p),
     i271(VideoQuality.hd1440P),
-    i272(VideoQuality.hd4320p),
+    i272(VideoQuality.hd4320p60),
     i278(VideoQuality.low144p),
     i302(VideoQuality.hd720p60),
     i303(VideoQuality.hd1080p60),
@@ -138,10 +138,10 @@ public enum Itag {
     i395(VideoQuality.low240p),
     i396(VideoQuality.low360p),
     i397(VideoQuality.low480p),
-    i398(VideoQuality.hd720p),
-    i399(VideoQuality.hd1080p),
-    i400(VideoQuality.hd1440P),
-    i401(VideoQuality.hd2160p),
+    i398(VideoQuality.hd720p60),
+    i399(VideoQuality.hd1080p60),
+    i400(VideoQuality.hd1440p60),
+    i401(VideoQuality.hd2160p60),
     i402(VideoQuality.hd4320p60);
 
     protected int id;

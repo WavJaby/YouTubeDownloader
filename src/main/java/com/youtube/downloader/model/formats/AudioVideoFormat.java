@@ -27,6 +27,7 @@ import com.youtube.downloader.model.quality.VideoQuality;
 
 public class AudioVideoFormat extends Format {
 
+//    private final int fps;
     private final Integer averageBitrate;
     private final Integer audioSampleRate;
     private final AudioQuality audioQuality;
@@ -37,6 +38,7 @@ public class AudioVideoFormat extends Format {
 
     public AudioVideoFormat(JSONObject json) {
         super(json);
+//        fps = json.getInteger("fps");
         audioSampleRate = json.getInteger("audioSampleRate");
         averageBitrate = json.getInteger("averageBitrate");
         qualityLabel = json.getString("qualityLabel");
@@ -68,6 +70,10 @@ public class AudioVideoFormat extends Format {
     public String type() {
         return AUDIO_VIDEO;
     }
+
+//    public int fps() {
+//        return fps;
+//    }
 
     public VideoQuality videoQuality() {
         return videoQuality != null ? videoQuality : itag.videoQuality();

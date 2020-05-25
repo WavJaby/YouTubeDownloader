@@ -7,23 +7,19 @@ import com.googlecode.mp4parser.authoring.builder.DefaultMp4Builder;
 import com.googlecode.mp4parser.authoring.container.mp4.MovieCreator;
 
 import java.io.*;
+import java.nio.file.Files;
 
-public class convertVideo {
+public class convertVideo extends File {
 
-    public static void main(String[] args) {
 
-        String outputDir = "D:\\My project\\Java\\YouTubeDownloader\\file_out";
-
-        new convertVideo(outputDir + "/video/【MC梦想改造家】基岩版爆改赛博朋克光污染大厦！光线追踪效果太惊人了.mp4", outputDir + "/audio/【MC梦想改造家】基岩版爆改赛博朋克光污染大厦！光线追踪效果太惊人了.mp4", outputDir);
-    }
-
-    public convertVideo(String videoFile, String audioFile, String outputFile) {
+    public convertVideo(File videoFile, File audioFile, String outputDir) {
+        super(outputDir + "/" + videoFile.getName());
         Movie video;
         Movie audio;
 
         try {
-            video = new MovieCreator().build(videoFile);
-            audio = new MovieCreator().build(audioFile);
+            video = new MovieCreator().build(videoFile.getPath());
+            audio = new MovieCreator().build(audioFile.getPath());
 
         } catch (RuntimeException | IOException e) {
             e.printStackTrace();
@@ -37,7 +33,7 @@ public class convertVideo {
 
         FileOutputStream fos;
         try {
-            fos = new FileOutputStream(outputFile+"/out.mp4");
+            fos = new FileOutputStream(outputDir + "/" + videoFile.getName());
         } catch (FileNotFoundException e) {
             e.printStackTrace();
             return;
@@ -50,8 +46,15 @@ public class convertVideo {
             fos.close();
         } catch (IOException e) {
             e.printStackTrace();
-//            return false;
         }
-//        return true;
+//        return new File(outputDir + "/" + videoFile.getName() + ".mp4");
+    }
+
+    public convertVideo(File audioFile, String outputDir) {
+        super(outputDir + "/" + audioFile.getName().replace(".mp4", ".mp3"));
+
+        String filePath = outputDir + "/" + audioFile.getName().replace(".mp4", ".mp3");
+        File toFile = new File(filePath);
+        audioFile.renameTo(toFile);
     }
 }

@@ -1,9 +1,11 @@
 package com.youtube;
 
+import com.sun.media.jfxmedia.logging.Logger;
 import com.youtube.downloader.OnYoutubeDownloadListener;
 import com.youtube.downloader.YoutubeDownloader;
 import com.youtube.downloader.YoutubeException;
 import com.youtube.downloader.convertVideo;
+import com.youtube.downloader.model.Extension;
 import com.youtube.downloader.model.Itag;
 import com.youtube.downloader.model.VideoDetails;
 import com.youtube.downloader.model.YoutubeVideo;
@@ -34,7 +36,10 @@ public class main {
         downloader.setParserRetryOnFailure(1);
 
         // 影片網址
-        String videoId = "https://www.youtube.com/watch?v=7G0PYEFdB6Y";
+//        String videoId = "https://www.youtube.com/watch?v=7G0PYEFdB6Y";
+        String videoId = input("video url");
+        System.out.println("取得影片...");
+
         // 取得影片
         YoutubeVideo video = downloader.getVideo(videoId);
 
@@ -50,53 +55,21 @@ public class main {
         //輸出位置
         String outputDir = "file_out";
 
-        int itag = input("輸入itag:");
-        Format videoFile = video.findFormatByItag(itag);// 選擇的影片
-        Format audioFile = video.findFormatByItag(140);// 選擇的音檔
-        System.out.println("找到:" + videoFile.itag().videoQuality() + "." + videoFile.extension().value());
-
+        int itag = Integer.parseInt(input("輸入itag:"));
+        Format videoFile = null;
+        Format audioFile = null;
+        if (Itag.valueOf("i" + itag).isVideo()) {
+            videoFile = video.findFormatByItag(itag);// 選擇的影片
+            audioFile = video.findFormatByItag(140);// 選擇的音檔
+            System.out.println("找到:" + videoFile.itag().videoQuality() + "." + videoFile.extension().value());
+        } else if (Itag.valueOf("i" + itag).isAudio()) {
+            audioFile = video.findFormatByItag(itag);// 選擇的音檔
+            System.out.println("找到:" + audioFile.itag().videoQuality() + "." + audioFile.extension().value());
+        }
         downloadVideoAudio(video, outputDir, videoFile, audioFile);
-
-//        File audioFile = video.downloadAsync(AudioFormats.get(1), outputDir, new OnYoutubeDownloadListener() {
-//            @Override
-//            public void onDownloading(int progress) {
-//                System.out.println("聲音: " + progress + "%");
-//            }
-//
-//            @Override
-//            public void onFinished(File file) {
-//                System.out.println("完成:" + file);
-//            }
-//
-//            @Override
-//            public void onError(Throwable throwable) {
-//                System.out.println("Error: " + throwable);
-//            }
-//        });//下載音檔
-//
-//        File videoFile = video.downloadAsync(file, outputDir, new OnYoutubeDownloadListener() {// 下載影片
-//            @Override
-//            public void onDownloading(int progress) {
-//                System.out.println("影片: " + progress + "%");
-//            }
-//
-//            @Override
-//            public void onFinished(File file) {
-//                System.out.println("完成:" + file);
-//            }
-//
-//            @Override
-//            public void onError(Throwable throwable) {
-//                System.out.println("Error: " + throwable);
-//            }
-//        });
-
-//        audioFile = extensionToM4a(outputDir, audioFile);//改音檔副檔名
-
-//        new convertVideo(videoFile.getPath(), audioFile.getPath(), outputVideo);
     }
 
-    public static File[] downloadVideoAudio(YoutubeVideo ytVideo, String outputDir, Format videoFile, Format audioFile) throws IOException, YoutubeException {
+    public static void downloadVideoAudio(YoutubeVideo ytVideo, String outputDir, Format videoFile, Format audioFile) throws IOException, YoutubeException {
         int coreCount = Runtime.getRuntime().availableProcessors();
         File[] outFile = new File[2];
         File videoOutDir = new File(outputDir + "/video");
@@ -110,7 +83,7 @@ public class main {
 
             @Override
             public void onFinished(File file) {
-                System.out.println("音檔下載完成:" + file);
+                System.out.println("音檔下載完成");
                 outFile[0] = file;
             }
 
@@ -120,23 +93,31 @@ public class main {
             }
         }));
 
-        executorService.submit(ytVideo.downloadAsync(videoFile, videoOutDir, new OnYoutubeDownloadListener() {// 下載影片
-            @Override
-            public void onDownloading(int progress) {
-                System.out.println("影片: " + progress + "%");
-            }
+        if (videoFile != null) //有要下載影片檔
+            executorService.submit(ytVideo.downloadAsync(videoFile, videoOutDir, new OnYoutubeDownloadListener() {// 下載影片
+                long now;
+                long startTime = System.currentTimeMillis() / 1000;
 
-            @Override
-            public void onFinished(File file) {
-                System.out.println("影片下載完成: " + file);
-                outFile[1] = file;
-            }
+                @Override
+                public void onDownloading(int progress) {
+                    now = System.currentTimeMillis() / 1000;
+                    int timeUse = (int) (now - startTime);
+                    System.out.print("影片下載剩餘" + (((timeUse * 100) / progress) - timeUse) + "秒,");
+                    System.out.println(progress + "%");
+                }
 
-            @Override
-            public void onError(Throwable throwable) {
-                System.out.println("Error: " + throwable);
-            }
-        }));
+                @Override
+                public void onFinished(File file) {
+                    System.out.println("影片下載完成: " + file);
+                    outFile[1] = file;
+                }
+
+                @Override
+                public void onError(Throwable throwable) {
+                    System.out.println("Error: " + throwable);
+                }
+            }));
+
 
         executorService.shutdown();
 
@@ -145,19 +126,20 @@ public class main {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        new convertVideo(outFile[1].getPath(), outFile[0].getPath(), outputDir);
-        return outFile;
+
+        if (videoFile != null) { //有要下載影片檔
+            //video = 1, audio = 0
+            File endVideoFile = new convertVideo(outFile[1], outFile[0], outputDir);
+            System.out.println(endVideoFile.getName() + "轉換完成");
+            outFile[0].delete();
+            outFile[1].delete();
+        } else {
+            File endVideoFile = new convertVideo(outFile[0], outputDir);
+            System.out.println(endVideoFile.getName() + "轉換完成");
+        }
     }
 
-    public static File extensionToM4a(File file) {
-        System.out.println(file.getPath());
-        String filePath = file.getPath().replace(".mp4", ".m4a");
-        File toFile = new File(filePath);
-        file.renameTo(toFile);
-        return toFile;
-    }
-
-    public static int input(String message) {
+    public static String input(String message) {
         System.out.println(message);
 
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
@@ -167,38 +149,40 @@ public class main {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return Integer.parseInt(userInput);
+        return userInput;
     }
 
     public static void printFormats(YoutubeVideo video) {
         //itags https://gist.github.com/sidneys/7095afe4da4ae58694d128b1034e01e2
-        System.out.println("#########所有#########");
-        //所有
-        List<Format> allFormats = video.formats();
-        allFormats.forEach(it -> {
-            System.out.println(it.extension().value() + ":" + Itag.valueOf("i" + it.itag()).videoQuality() + " : " + it.url());
-        });
+//        System.out.println("#########所有#########");
+//        //所有
+//        List<Format> allFormats = video.formats();
+//        allFormats.forEach(it -> {
+//            System.out.println(it.extension().value() + ":" + Itag.valueOf("i" + it.itag()).videoQuality() + " : " + it.url());
+//        });
 
         System.out.println("#########影片+聲音#########");
         //影片+聲音
-        List<AudioVideoFormat> videoAudioFormats = video.videoWithAudioFormats();
-        videoAudioFormats.forEach(it -> {
-            System.out.println(it.extension().value() + ":" + it.videoQuality() + ":" + it.itag() + " : " + it.url());
-        });
-
-        System.out.println("#########影片#########");
-        //影片
-        List<VideoFormat> videoFormats = video.videoFormats();
-        videoFormats.forEach(it -> {
-            System.out.println(it.extension().value() + ":" + it.videoQuality() + ":" + it.itag() + " : " + it.url());
-        });
+//        List<AudioVideoFormat> videoAudioFormats = video.videoWithAudioFormats();
+//        videoAudioFormats.forEach(it -> {
+//            System.out.println(it.extension().value() + ":\t" + it.videoQuality() + ":\t" + it.audioQuality() + ":\t" +
+//                     it.averageBitrate() / 1000 + ":\t" + it.itag() + ":\t" + it.url());
+//        });
 
         System.out.println("#########聲音#########");
         //聲音
         List<AudioFormat> AudioFormats = video.audioFormats();
         AudioFormats.forEach(it -> {
-            System.out.println(it.extension().value() + ":" + it.averageBitrate() / 1000 + "k:" + it.itag() + " : " + it.url());
+            System.out.println(it.extension().value() + ":\t" + it.audioQuality() + ":\t" +
+                    it.averageBitrate() / 1000 + "k:\t" + it.itag() + ":\t" + it.url());
+        });
+
+        System.out.println("#########影片#########");
+        //影片
+        List<VideoFormat> videoFormats = video.findVideoWithExtension(Extension.MP4);
+        videoFormats.forEach(it -> {
+            System.out.println(it.extension().value() + ":\t" + it.videoQuality() + ":\t" +
+                    it.fps() + ":\t" + it.itag() + ":\t" + it.url());
         });
     }
-
 }

@@ -141,10 +141,9 @@ public class YoutubeVideo {
         return outputFile;
     }
 
-
     public Runnable downloadAsync(Format format, File outDir, OnYoutubeDownloadListener listener) throws IOException, YoutubeException {
         if (videoDetails.isLive() || (videoDetails.isLiveContent() && videoDetails.lengthSeconds() == 0))
-            throw new YoutubeException.LiveVideoException("Can not download live stream");
+            throw new YoutubeException.LiveVideoException("Can not download lwive stream");
 
         File outputFile = getOutputFile(videoDetails, format, outDir);
 
@@ -158,8 +157,9 @@ public class YoutubeVideo {
                     try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(outputFile))) {
                         double total = 0;
                         byte[] buffer = new byte[4096];
-                        int count = 0;
+                        int count;
                         int progress = 0;
+
                         while ((count = bis.read(buffer, 0, 4096)) != -1) {
                             bos.write(buffer, 0, count);
                             total += count;
@@ -182,6 +182,7 @@ public class YoutubeVideo {
         };
         return runnable;
     }
+
 
 //    public Future<File> downloadAsync(Format format, File outDir) throws YoutubeException.LiveVideoException, IOException {
 //        if (videoDetails.isLive())
